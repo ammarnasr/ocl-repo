@@ -8,11 +8,22 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.transforms import ToTensor
 import copy
 from vgg_16 import Network
+from tqdm import tqdm
+import sys
 
-
+epochs = 10
 OCL_sw = True
+n = len(sys.argv)
+
+if n == 3 :  
+  ocl_input = sys.argv[1]
+  if ocl_input == '0' :
+    OCL_sw = False
+  epochs_input = sys.argv[2]
+  epochs = int(epochs_input)
+
+
 alpha = 0.0;
-epochs = 1
 valid_size = 0.2
 valid_shuffle = True
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -58,7 +69,7 @@ print("Length of Valid Loader: ", len(loader_val))
 best_acc = 0
 best_epoch = 0
 
-for epoch in range(epochs):
+for epoch in tqdm(range(epochs), desc = 'Epochs Progress'):
     num_correct = 0
     running_loss = 0.0
     i = 0
