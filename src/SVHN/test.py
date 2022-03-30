@@ -5,6 +5,15 @@ from torchvision.datasets import SVHN as DATA
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.transforms import ToTensor
 from vgg_16 import Network
+from tqdm import tqdm
+import sys
+
+ckpt_name = "./models/VGG16_0.0001_SVHN_True.pt"
+n = len(sys.argv)
+
+if n == 2 :  
+  name_input = sys.argv[1]
+  ckpt_name = name_input
 
 
 def mergimages(x, y, overlap):
@@ -25,7 +34,7 @@ def mergimages(x, y, overlap):
 
 
 ckpt_names = []
-ckpt_names.append("./models/VGG16_0.0001_SVHN_True.pt")
+ckpt_names.append(ckpt_name)
 Overlap = 0
 
 
