@@ -8,7 +8,7 @@ from vgg_16 import Network
 from tqdm import tqdm
 import sys
 
-ckpt_name = "./models/VGG16_0.0001_SVHN_True.pt"
+ckpt_name = "./models/VGG16_0.0001_SVHN_True_25_epochs.pt"
 n = len(sys.argv)
 
 if n == 2 :  
