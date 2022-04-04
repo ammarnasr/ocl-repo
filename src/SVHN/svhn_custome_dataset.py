@@ -125,7 +125,7 @@ class SVHN_Dataset(Dataset):
     
     def get_all_boxes(self):
       b_boxes = []
-      for i in tqdm(range(len(self.digit_struct['/digitStruct/name']))):
+      for i in tqdm(range(len(self.digit_struct['/digitStruct/name'])), 'Loading Image Dataset From .mat File'):
         # if i == 100:
         #   break
         b_boxes.append(self.get_box_data(i))
@@ -133,7 +133,13 @@ class SVHN_Dataset(Dataset):
 
     def get_labels(self, bbox):
         
-        new_labels = torch.tensor([x-1 for x in bbox['label']], dtype=torch.int64)
+        l = []
+        for x in bbox['label'] :
+          if x == 10 :
+            l.append(0)
+          else:
+            l.append(x)
+        new_labels = torch.tensor(l, dtype=torch.int64)
         labels = one_hot(new_labels,  num_classes=10)
         labels_sum = torch.sum(labels, dim=0)
         for i,x in enumerate(labels_sum):
