@@ -133,5 +133,5 @@ for epoch in tqdm(range(epochs), desc = 'Epochs Progress'):
 
 
 print("Training Complete, Best Validation Accuracy: ", best_acc)
-PATH = './models/' + networkName + "_" + str(lr) + "_" + datasetName + "_" + str(OCL_sw)+ "_"+str(epochs)+"_Epochs" + ".pt"
+PATH = './models/' + networkName + "_" + str(lr) + "_" + datasetName + "_" + str(OCL_sw)+ "_"+str(epochs)+"_epochs" + ".pt"
 torch.save({'model_state_dict': best_model.state_dict()}, PATH)
