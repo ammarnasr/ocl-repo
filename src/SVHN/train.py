@@ -11,7 +11,7 @@ from vgg_16 import Network
 from tqdm import tqdm
 import sys
 
-epochs = 10
+epochs = 100
 OCL_sw = True
 n = len(sys.argv)
 
@@ -133,5 +133,5 @@ for epoch in tqdm(range(epochs), desc = 'Epochs Progress'):
 
 
 print("Training Complete, Best Validation Accuracy: ", best_acc)
-PATH = './models/' + networkName + "_" + str(lr) + "_" + datasetName + "_" + str(OCL_sw) + ".pt"
+PATH = './models/' + networkName + "_" + str(lr) + "_" + datasetName + "_" + str(OCL_sw)+ "_"+str(epochs)+"_Epochs" + ".pt"
 torch.save({'model_state_dict': best_model.state_dict()}, PATH)
