@@ -5,8 +5,11 @@ from tqdm import tqdm
 from torch.nn.functional import one_hot
 from svhn_custome_dataset import SVHN_Dataset
 import sys
+from torchvision.transforms import ToTensor
+from torchvision.datasets import SVHN as DATA
 
-ckpt_name = "./models/VGG16_0.0001_SVHN_True.pt"
+from torch.nn.functional import one_hot
+ckpt_name = "./models/VGG16_0.0001_SVHN_True_100_epochs.pt"
 n = len(sys.argv)
 
 if n == 2 :  
@@ -33,9 +36,12 @@ def get_preds_from_outputs(outputs, num_images):
   preds = torch.tensor(preds, device=device)
   return preds
 
-x = SVHN_Dataset('org_data/test/digitStruct.mat','org_data/test')
-batch_size = 16
+# x = SVHN_Dataset('org_data/test/digitStruct.mat','org_data/test')
+x = DATA(root='./data', split='test', download=True, transform=ToTensor())
+
+batch_size = 200
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# loader_test = DataLoader(x, batch_size=batch_size, shuffle=True, num_workers=0)
 loader_test = DataLoader(x, batch_size=batch_size, shuffle=True, num_workers=0)
 PATH = ckpt_name
 checkpoint = torch.load(PATH, map_location=torch.device(device))
@@ -48,11 +54,14 @@ accuracy = 0
 network.eval()
     
 with torch.no_grad():
-  for batch in tqdm(loader_test, 'Test on Real SVHN'):
+  for batch in loader_test:
     batch_count += 1
-    images = batch['image']
-    labels = batch['labels']
-    # labels = torch.permute(batch['labels'], (1, 0))
+    # images = batch['image']
+    # labels = batch['labels']
+    images = batch[0]
+    labels = batch[1]
+    labels = one_hot(labels,  num_classes=10)
+    # print(type(batch),'---',labels[0])
     images = images.to(device).float()
     labels = labels.to(device)
     num_images =torch.sum(labels, dim=1)
