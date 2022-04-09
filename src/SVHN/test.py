@@ -39,7 +39,7 @@ Overlap = 0
 
 
 transform_test = ToTensor()
-batch_size_test = 16
+batch_size_test = 200
 numberOfModels = len(ckpt_names)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('The Device is ', device)
@@ -84,12 +84,14 @@ for epoch in range(numberOfModels):
     num_images = 2
     num_correct = 0
     batch_count = 0
+    total_number = 0
 
     network.eval()
     with torch.no_grad():
         for batch in loader_test:
             batch_count += 1
-            rand_indx = np.arange(batch_size_test)
+            current_batch_szie = batch[0].shape[0]
+            rand_indx = np.arange(current_batch_szie)
             np.random.shuffle(rand_indx)
             images_1 = batch[0]
             images_2 = images_1[rand_indx]
@@ -114,8 +116,10 @@ for epoch in range(numberOfModels):
             num_correct_now = preds_labels.eq(labels_2).sum().item()
             num_correct += num_correct_now
 
-            accuracy = num_correct / (num_images * batch_size_test * batch_count)
+            total_number += num_images * current_batch_szie
 
+            
+        accuracy = num_correct / total_number
         print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
         TestType = 'Multi-Label-no-Overlap'
         Accuracy = accuracy * 100
@@ -132,11 +136,13 @@ for i in range(0, 11):
         num_images = 2
         num_correct = 0
         batch_count = 0
+        total_number =0
         network.eval()
         with torch.no_grad():
             for batch in loader_test:
                 batch_count += 1
-                rand_indx = np.arange(batch_size_test)
+                current_batch_szie = batch[0].shape[0]
+                rand_indx = np.arange(current_batch_szie)
                 np.random.shuffle(rand_indx)
                 images_1 = batch[0]
                 images_2 = images_1[rand_indx]
@@ -163,7 +169,8 @@ for i in range(0, 11):
                 num_correct_now = preds_labels.eq(labels_2).sum().item()
                 num_correct += num_correct_now
 
-                accuracy = num_correct / (num_images * batch_size_test * batch_count)
+                total_number += num_images * current_batch_szie
+            accuracy = num_correct / (total_number)
             print("Test Accuarcy of Multi-Label of", PATH, "is ", accuracy * 100, "%", "Overlap: ", i * 10, "%")
             TestType = 'Multi-Label'
             Overlap = i * 10
