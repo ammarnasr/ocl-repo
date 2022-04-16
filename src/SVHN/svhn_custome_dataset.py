@@ -142,11 +142,11 @@ class SVHN_Dataset(Dataset):
         new_labels = torch.tensor(l, dtype=torch.int64)
         labels = one_hot(new_labels,  num_classes=10)
         labels_sum = torch.sum(labels, dim=0)
-        for i,x in enumerate(labels_sum):
-          if x ==0 :
-            labels_sum[i] = 0
-          else:
-            labels_sum[i] = 1
+        # for i,x in enumerate(labels_sum):
+        #   if x ==0 :
+        #     labels_sum[i] = 0
+        #   else:
+        #     labels_sum[i] = 1
 
         return labels_sum
 
