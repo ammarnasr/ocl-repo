@@ -3,7 +3,7 @@ from torch.utils.data import Dataset, DataLoader
 from vgg_16 import Network
 from tqdm import tqdm
 from torch.nn.functional import one_hot
-# from svhn_custome_dataset import SVHN_Dataset
+from svhn_custome_dataset import SVHN_Dataset
 import sys
 from torchvision.transforms import ToTensor
 from torchvision.datasets import SVHN as DATA
@@ -55,8 +55,8 @@ def get_preds_from_outputs(outputs, num_images):
     return preds
 
 
-# x = SVHN_Dataset('org_data/test/digitStruct.mat','org_data/test')
-x = DATA(root='./data', split='test', download=True, transform=ToTensor())
+x = SVHN_Dataset('org_data/test/digitStruct.mat','org_data/test')
+# x = DATA(root='./data', split='test', download=True, transform=ToTensor())
 
 batch_size = 200
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -71,21 +71,28 @@ n_all_images = 0
 accuracy = 0
 network.eval()
 
-# with torch.no_grad():
-#   for batch in loader_test:
-#     images = batch['image']
-#     labels = batch['labels']
-#     images = images.to(device).float()
-#     labels = labels.to(device)
-#     num_images =torch.sum(labels, dim=1)
-#     n_all_images += torch.sum(num_images).item()
-#     [kasami_preds, outputs] = network(images)
+with torch.no_grad():
+  for batch in loader_test:
+    images = batch['image']
+    labels = batch['labels'].float()
+    images = images.to(device).float()
 
-#     preds = get_preds_from_outputs(outputs, num_images)
-#     num_correct_now = get_num_correct(preds,labels)
-#     num_correct += num_correct_now
-# accuracy = num_correct / (n_all_images)
-# print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
+    for i in range(len(labels)):
+      labels[i] = labels[i] / max(labels[i])
+      labels[i] = torch.ceil(labels[i])
+
+    labels = labels.int()
+    labels = labels.to(device)
+    num_images =torch.sum(labels, dim=1)
+    n_all_images += torch.sum(num_images).item()
+    [kasami_preds, outputs] = network(images)
+
+    preds = get_preds_from_outputs(outputs, num_images)
+    num_correct_now = get_num_correct(preds,labels)
+    num_correct += num_correct_now
+
+accuracy = num_correct / (n_all_images)
+print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
 
 # with torch.no_grad():
 #   for batch in loader_test:
@@ -109,36 +116,36 @@ network.eval()
 # print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
 
 
-with torch.no_grad():
-    for batch in loader_test:
-        current_batch_szie = batch[0].shape[0]
-        rand_indx = np.arange(current_batch_szie)
-        np.random.shuffle(rand_indx)
-        # images = batch['image']
-        # labels = batch['labels']
-        images_1 = batch[0]
-        images_2 = images_1[rand_indx]
-        # images = torch.cat([images_1, images_2], dim=2)
-        images = mergimages(images_1, images_2, .1)
+# with torch.no_grad():
+#     for batch in loader_test:
+#         current_batch_szie = batch[0].shape[0]
+#         rand_indx = np.arange(current_batch_szie)
+#         np.random.shuffle(rand_indx)
+#         # images = batch['image']
+#         # labels = batch['labels']
+#         images_1 = batch[0]
+#         images_2 = images_1[rand_indx]
+#         # images = torch.cat([images_1, images_2], dim=2)
+#         images = mergimages(images_1, images_2, .1)
 
-        labels = batch[1]
-        labels_rand = labels[rand_indx]
-        labels = one_hot(labels, num_classes=10)
-        labels_rand = one_hot(labels_rand, num_classes=10)
-        labels = labels + labels_rand
-        for i in range(current_batch_szie):
-            labels[i] = labels[i] / max(labels[i])
-            labels[i] = np.ceil(labels[i])
-        # print(type(batch),'---',labels[0])
-        images = images.to(device).float()
-        labels = labels.to(device)
-        num_images = torch.sum(labels, dim=1)
-        n_all_images += torch.sum(num_images).item()
-        [kasami_preds, outputs] = network(images)
+#         labels = batch[1]
+#         labels_rand = labels[rand_indx]
+#         labels = one_hot(labels, num_classes=10)
+#         labels_rand = one_hot(labels_rand, num_classes=10)
+#         labels = labels + labels_rand
+#         for i in range(current_batch_szie):
+#             labels[i] = labels[i] / max(labels[i])
+#             labels[i] = np.ceil(labels[i])
+#         # print(type(batch),'---',labels[0])
+#         images = images.to(device).float()
+#         labels = labels.to(device)
+#         num_images = torch.sum(labels, dim=1)
+#         n_all_images += torch.sum(num_images).item()
+#         [kasami_preds, outputs] = network(images)
 
-        preds = get_preds_from_outputs(outputs, num_images)
-        num_correct_now = get_num_correct(preds, labels)
-        num_correct += num_correct_now
-accuracy = num_correct / (n_all_images)
-print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
+#         preds = get_preds_from_outputs(outputs, num_images)
+#         num_correct_now = get_num_correct(preds, labels)
+#         num_correct += num_correct_now
+# accuracy = num_correct / (n_all_images)
+# print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
 
