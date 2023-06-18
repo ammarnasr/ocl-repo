@@ -8,7 +8,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.transforms import ToTensor
 import copy
 from vgg_16 import Network
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import sys
 import os
 
@@ -216,4 +216,28 @@ def main(
                
 
 if __name__ == '__main__':
-    main()
+    use_svhn = False
+    valid_size = 0.2
+    valid_shuffle = True
+    batch_size = 64
+    epochs = 10
+    learning_rate = 0.01
+    OCL_sw = True
+    alpha = 0.5
+    seed = None
+    device = 'cpu'
+    model_save_path = './models/best_model.pt'
+    
+    main(
+        use_svhn=use_svhn,
+        valid_size=valid_size,
+        valid_shuffle=valid_shuffle,
+        batch_size=batch_size,
+        epochs=epochs,
+        learning_rate=learning_rate,
+        OCL_sw=OCL_sw,
+        alpha=alpha,
+        seed=seed,
+        device=device,
+        model_save_path=model_save_path
+        )
