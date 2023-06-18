@@ -23,7 +23,7 @@ if n == 3 :
   epochs = int(epochs_input)
 
 
-alpha = 0.0;
+alpha = 0.0
 valid_size = 0.2
 valid_shuffle = True
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
