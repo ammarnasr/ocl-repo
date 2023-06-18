@@ -75,7 +75,7 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
         loss = 0.0
         
         # Initialize progress bars for batches
-        batches_bar = tqdm(loader_train, desc=f'Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}')
+        batches_bar = tqdm(loader_train, desc=f'Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}',position=0, leave=True)
 
         for batch in batches_bar:
 
@@ -122,7 +122,7 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             num_correct_now = 0
 
             # Initialize progress bars for batches
-            eval_batches_bar = tqdm(loader_train, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}')
+            eval_batches_bar = tqdm(loader_train, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}', position=0, leave=True)
             for batch in eval_batches_bar:
                 # Get batch data
                 images = batch[0].to(device)
