@@ -120,9 +120,11 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             num_correct = 0
             loss = 0.0
             num_correct_now = 0
+            num_batches = len(loader_val)
+            num_images = num_batches * batch_size
 
             # Initialize progress bars for batches
-            eval_batches_bar = tqdm(loader_train, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}', position=0, leave=True)
+            eval_batches_bar = tqdm(loader_train, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}  Total Correct: {num_correct}/{num_images}', position=0, leave=True)
             for batch in eval_batches_bar:
                 # Get batch data
                 images = batch[0].to(device)
@@ -148,7 +150,7 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
                 running_loss += loss.item()
 
                 # Update progress bars
-                eval_batches_bar.set_description(f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}') 
+                eval_batches_bar.set_description(f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}  Total Correct: {num_correct}/{num_images}') 
                 eval_batches_bar.refresh()
 
 
@@ -157,14 +159,14 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             best_epoch = epoch
             best_model = copy.deepcopy(network.state_dict())
             torch.save(best_model, model_save_path)
-            print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/len(loader_val.dataset)}')
+            print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images}')
         else:
             if num_correct > best_acc:
                 best_acc = num_correct
                 best_epoch = epoch
                 best_model = copy.deepcopy(network.state_dict())
                 torch.save(best_model, model_save_path)
-                print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/len(loader_val.dataset)}')
+                print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images}')
 
 
 
@@ -217,7 +219,7 @@ def main(
 
 if __name__ == '__main__':
     use_svhn = False
-    valid_size = 0.2
+    valid_size = 0.5
     valid_shuffle = True
     batch_size = 64
     epochs = 10
@@ -225,8 +227,18 @@ if __name__ == '__main__':
     OCL_sw = True
     alpha = 0.5
     seed = None
-    device = 'cpu'
-    model_save_path = './models/best_model.pt'
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    if use_svhn:
+        dataset_name = 'SVHN'
+    else:
+        dataset_name = 'MNIST'
+    
+    if OCL_sw:
+        model_save_path = f'./models/{dataset_name}_OCL.pt'
+    else:
+        model_save_path = f'./models/{dataset_name}_noOCL.pt'
+        
     
     main(
         use_svhn=use_svhn,
