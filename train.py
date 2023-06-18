@@ -58,6 +58,7 @@ def initialize_kasami_tensor(kasami_file='kasami_10X255.csv'):
 
 def train_network(network, loader_train, loader_val, epochs, loss_function_cross, loss_function_mse, optimizer, device, alpha, OCL_sw, model_save_path):
     batch_size = loader_train.batch_size
+    val_batch_size = loader_val.batch_size
     kasami_tensor = initialize_kasami_tensor()
     kasami_tensor = kasami_tensor.to(device)
     if OCL_sw:
@@ -121,10 +122,10 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             loss = 0.0
             num_correct_now = 0
             num_batches = len(loader_val)
-            num_images = num_batches * batch_size
+            num_images = num_batches * val_batch_size
 
             # Initialize progress bars for batches
-            eval_batches_bar = tqdm(loader_train, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}  Total Correct: {num_correct}/{num_images}', position=0, leave=True)
+            eval_batches_bar = tqdm(loader_val, desc=f'Val Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}  Total Correct: {num_correct}/{num_images}', position=0, leave=True)
             for batch in eval_batches_bar:
                 # Get batch data
                 images = batch[0].to(device)
