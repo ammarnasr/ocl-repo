@@ -160,14 +160,14 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             best_epoch = epoch
             best_model = copy.deepcopy(network.state_dict())
             torch.save(best_model, model_save_path)
-            print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images}')
+            print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images} and loss {running_loss/num_batches}')
         else:
             if num_correct > best_acc:
                 best_acc = num_correct
                 best_epoch = epoch
                 best_model = copy.deepcopy(network.state_dict())
                 torch.save(best_model, model_save_path)
-                print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images}')
+                print(f'Best model saved at epoch {best_epoch} with accuracy {best_acc/num_images} and loss {running_loss/num_batches}')
 
 
 
