@@ -1,4 +1,4 @@
-# CLIP prefix captioning.
+# Kasami Orthogonal Classification Layer
 
 <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>  
 Demo Notebook: <a href="https://colab.research.google.com/drive/1T5IFpdhlQmNvLufcepsfSjAn3gvtOcf8?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" height=20></a>  
