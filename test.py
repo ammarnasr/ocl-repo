@@ -1,22 +1,8 @@
 import numpy as np
 import torch
-import torch.nn as nn
-from torchvision.datasets import SVHN as DATA
-from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision.transforms import ToTensor
-from vgg_16 import Network
-from tqdm import tqdm
-import sys
+from tqdm.auto import tqdm
 
-ckpt_name = "./models/VGG16_0.0001_SVHN_True.pt"
-n = len(sys.argv)
-
-if n == 2 :  
-  name_input = sys.argv[1]
-  ckpt_name = name_input
-
-
-def mergimages(x, y, overlap):
+def merge_images(x, y, overlap):
     if overlap == 1:
         new_image = x + y
         return new_image
@@ -33,138 +19,71 @@ def mergimages(x, y, overlap):
     return new_image
 
 
-ckpt_names = []
-ckpt_names.append(ckpt_name)
-Overlap = 0
+def apply_merge_to_batch(batch, overlap, batch_size, device):
+    rand_indx = np.arange(batch_size)
+    np.random.shuffle(rand_indx)
+    images_1 = batch[0]
+    images_2 = images_1[rand_indx]
+    images = merge_images(images_1, images_2, overlap)
+    labels = batch[1]
+    labels_rand = labels[rand_indx]
+    labels_1 = torch.stack([labels, labels], dim=0)
+    labels_2 = torch.stack([labels_rand, labels_rand], dim=0)
+    images = images.to(device)
+    labels_1 = labels_1.to(device)
+    labels_2 = labels_2.to(device)
+    return images, labels_1, labels_2
 
 
-transform_test = ToTensor()
-batch_size_test = 16
-numberOfModels = len(ckpt_names)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print('The Device is ', device)
-test_set = DATA(root='./data', split='test', download=True, transform=transform_test)
-loader_test = torch.utils.data.DataLoader(test_set, batch_size=batch_size_test)
+def get_num_correct_for_merge(preds, labels_1, labels_2, num_images=2):
+    top_k = torch.topk(preds, num_images)
+    preds_labels = top_k[1]
+    preds_labels = torch.transpose(preds_labels, 0, 1)
+    num_correct = preds_labels.eq(labels_1).sum().item()
+    num_correct += preds_labels.eq(labels_2).sum().item()
+    return num_correct
 
 
-for epoch in range(numberOfModels):
-    PATH = ckpt_names[epoch]
-    checkpoint = torch.load(PATH, map_location=torch.device(device))
-    network = Network().to(device)
-    network.load_state_dict(checkpoint['model_state_dict'])
-
+def evaluate_model(network, loader_test, device):
+    batch_size = loader_test.batch_size
+    batch_count = len(loader_test)
+    total_images = batch_count * batch_size
     total_num_correct = 0
-    batch_count = 0
+    num_correct_batch = 0
     network.eval()
-
     with torch.no_grad():
-        for batch in loader_test:
+        eval_bar = tqdm(loader_test, desc=f'Evaluating Batch Correct: {num_correct_batch}/{batch_size} Total: {total_num_correct}/{total_images}')
+        for batch in eval_bar:
             images = batch[0].to(device)
             labels = batch[1].to(device)
             [kasami_preds, preds] = network(images)
             num_correct_batch = preds.argmax(dim=1).eq(labels).sum().item()
             total_num_correct += num_correct_batch
+            eval_bar.set_description(f'Evaluating Batch Correct: {num_correct_batch}/{batch_size} Total: {total_num_correct}/{total_images}')
+            eval_bar.update()
+    test_accuracy = total_num_correct / (total_images)
+    return test_accuracy
 
-    len_test = len(test_set)
-    test_accuarcy = total_num_correct / len_test
 
-    print("Test Accuarcy of Single-Label", PATH, "is : ", test_accuarcy * 100, "%")
-    TestType = 'Single-Label'
-    Accuracy = test_accuarcy * 100
-
-for epoch in range(numberOfModels):
-
-    PATH = ckpt_names[epoch]
-    print(PATH)
-    checkpoint = torch.load(PATH, map_location=torch.device(device))
-    network = Network().to(device)
-    network.load_state_dict(checkpoint['model_state_dict'])
-    loss_function_cross = nn.CrossEntropyLoss()
-
-    num_images = 2
-    num_correct = 0
-    batch_count = 0
-
+def evaluate_model_with_overlap(network, loader_test, device, overlap, num_images=2):
+    batch_size = loader_test.batch_size
+    batch_count = len(loader_test)
+    total_num_images = batch_count * batch_size * num_images
+    total_num_correct = 0
+    num_correct_batch = 0
     network.eval()
     with torch.no_grad():
+        eval_bar = tqdm(loader_test, desc=f'Evaluating Batch Correct: {num_correct_batch}/{batch_size*num_images} Total: {total_num_correct}/{total_num_images}')
         for batch in loader_test:
-            batch_count += 1
-            rand_indx = np.arange(batch_size_test)
-            np.random.shuffle(rand_indx)
-            images_1 = batch[0]
-            images_2 = images_1[rand_indx]
-            images = torch.cat([images_1, images_2], dim=2)
-            labels = batch[1]
-            labels_rand = labels[rand_indx]
-            labels_1 = torch.stack([labels, labels], dim=0)
-            labels_2 = torch.stack([labels_rand, labels_rand], dim=0)
-
-            labels_1 = labels_1.to(device)
-            labels_2 = labels_2.to(device)
-            images = images.to(device)
-
+            batch_size = batch[0].shape[0]
+            images, labels_1, labels_2 = apply_merge_to_batch(batch, overlap, batch_size, device)
             [kasami_preds, preds] = network(images)
-            top_k = torch.topk(preds, num_images)
-            preds_labels = top_k[1]
-            preds_labels = torch.transpose(preds_labels, 0, 1)
+            num_correct_batch = get_num_correct_for_merge(preds, labels_1, labels_2)
+            total_num_correct += num_correct_batch
+            eval_bar.set_description(f'Evaluating Batch Correct: {num_correct_batch}/{batch_size*num_images} Total: {total_num_correct}/{total_num_images}')
+            eval_bar.update()
+    test_accuracy = total_num_correct / (total_num_images)
+    return test_accuracy
 
-            num_correct_now = preds_labels.eq(labels_1).sum().item()
-            num_correct += num_correct_now
-
-            num_correct_now = preds_labels.eq(labels_2).sum().item()
-            num_correct += num_correct_now
-
-            accuracy = num_correct / (num_images * batch_size_test * batch_count)
-
-        print("Test Accuarcy of Multi-Label", PATH, "is : ", accuracy * 100, "% no Overlap")
-        TestType = 'Multi-Label-no-Overlap'
-        Accuracy = accuracy * 100
-
-
-for i in range(0, 11):
-    for epoch in range(numberOfModels):
-        PATH = ckpt_names[epoch]
-        checkpoint = torch.load(PATH, map_location=torch.device(device))
-        network = Network().to(device)
-        network.load_state_dict(checkpoint['model_state_dict'])
-        loss_function_cross = nn.CrossEntropyLoss()
-
-        num_images = 2
-        num_correct = 0
-        batch_count = 0
-        network.eval()
-        with torch.no_grad():
-            for batch in loader_test:
-                batch_count += 1
-                rand_indx = np.arange(batch_size_test)
-                np.random.shuffle(rand_indx)
-                images_1 = batch[0]
-                images_2 = images_1[rand_indx]
-
-                images = mergimages(images_1, images_2, i / 10)
-
-                labels = batch[1]
-                labels_rand = labels[rand_indx]
-                labels_1 = torch.stack([labels, labels], dim=0)
-                labels_2 = torch.stack([labels_rand, labels_rand], dim=0)
-
-                labels_1 = labels_1.to(device)
-                labels_2 = labels_2.to(device)
-                images = images.to(device)
-
-                [kasami_preds, preds] = network(images)
-                top_k = torch.topk(preds, num_images)
-                preds_labels = top_k[1]
-                preds_labels = torch.transpose(preds_labels, 0, 1)
-
-                num_correct_now = preds_labels.eq(labels_1).sum().item()
-                num_correct += num_correct_now
-
-                num_correct_now = preds_labels.eq(labels_2).sum().item()
-                num_correct += num_correct_now
-
-                accuracy = num_correct / (num_images * batch_size_test * batch_count)
-            print("Test Accuarcy of Multi-Label of", PATH, "is ", accuracy * 100, "%", "Overlap: ", i * 10, "%")
-            TestType = 'Multi-Label'
-            Overlap = i * 10
-            Accuracy = accuracy * 100
+        
+        

@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 
 org_data/
+models/
+figures/
 
 # C extensions
 *.so

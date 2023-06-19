@@ -1,0 +1,5 @@
+use_svhn,OCL_sw,test_accuracy
+True,True,0.8024714543269231
+True,False,0.9306640625
+False,True,0.9853350105932204
+False,False,0.9919226694915254

@@ -56,11 +56,12 @@ def initialize_kasami_tensor(kasami_file='kasami_10X255.csv'):
     kasami_tensor = torch.FloatTensor(kasami.values)
     return kasami_tensor
 
-def train_network(network, loader_train, loader_val, epochs, loss_function_cross, loss_function_mse, optimizer, device, alpha, OCL_sw, model_save_path):
+def train_network(network, loader_train, loader_val, epochs, loss_function_cross, loss_function_mse, optimizer, device, alpha, OCL_sw, model_save_path, save_interval):
     batch_size = loader_train.batch_size
     val_batch_size = loader_val.batch_size
     kasami_tensor = initialize_kasami_tensor()
     kasami_tensor = kasami_tensor.to(device)
+    steps_counter = 0
     if OCL_sw:
         network.fc_k.bias.data.zero_()
         network.fc_k.weight.data = kasami_tensor
@@ -79,6 +80,7 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
         batches_bar = tqdm(loader_train, desc=f'Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}',position=0, leave=True)
 
         for batch in batches_bar:
+            steps_counter += 1
 
             # Get batch data
             images = batch[0].to(device)
@@ -110,6 +112,12 @@ def train_network(network, loader_train, loader_val, epochs, loss_function_cross
             # Update progress bars
             batches_bar.set_description(f'Batches Progress Loss: {loss:.4f} Correct: {num_correct_now}/{batch_size}')
             batches_bar.refresh()
+
+            # Save model every save_interval steps
+            if steps_counter % save_interval == 0:
+                steps_save_path = model_save_path[:-3] + f'_{steps_counter}.pt'
+                torch.save(network.state_dict(), steps_save_path)
+
 
 
 
@@ -184,7 +192,8 @@ def main(
         alpha=0.5,
         seed=None,
         device='cpu',
-        model_save_path='./models/best_model.pt'
+        model_save_path='./models/best_model.pt',
+        save_interval=100
         ):
     
     #Set seed
@@ -213,7 +222,20 @@ def main(
     optimizer = optim.SGD(network.parameters(), lr=learning_rate, momentum=0.9)
 
     #Train network
-    train_network(network, loader_train, loader_val, epochs, loss_function_cross, loss_function_mse, optimizer, device, alpha, OCL_sw, model_save_path)
+    train_network(
+        network,
+        loader_train,
+        loader_val,
+        epochs,
+        loss_function_cross,
+        loss_function_mse,
+        optimizer,
+        device,
+        alpha,
+        OCL_sw,
+        model_save_path,
+        save_interval
+        )
 
 
                
@@ -229,6 +251,7 @@ if __name__ == '__main__':
     alpha = 0.5
     seed = None
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    save_interval = 100
 
     if use_svhn:
         dataset_name = 'SVHN'
@@ -252,5 +275,6 @@ if __name__ == '__main__':
         alpha=alpha,
         seed=seed,
         device=device,
-        model_save_path=model_save_path
+        model_save_path=model_save_path,
+        save_interval=save_interval
         )
